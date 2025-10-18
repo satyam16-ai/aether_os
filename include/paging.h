@@ -3,9 +3,9 @@
 #define PAGING_H
 
 #include <stdint.h>
+#include <memory.h>  // For PAGE_SIZE definition
 
-// Page size (4KB)
-#define PAGE_SIZE           4096
+// Page alignment macro
 #define PAGE_ALIGN(addr)    (((addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
 // Number of entries in page directory/table

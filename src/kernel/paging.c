@@ -58,7 +58,7 @@ void paging_enable(void) {
     
     // Load page directory address into CR3
     uint32_t pd_physical = (uint32_t)kernel_directory;
-    printk("  Loading page directory (CR3 = %p)\n", pd_physical);
+    printk("  Loading page directory (CR3 = 0x%08X)\n", pd_physical);
     paging_load_directory((uint32_t*)pd_physical);
     
     // Enable paging by setting bit 31 in CR0
@@ -73,7 +73,7 @@ void paging_identity_map(page_directory_t* dir, uint32_t start,
     start = start & 0xFFFFF000;
     end = PAGE_ALIGN(end);
     
-    printk("    Mapping %p -> %p (identity)\n", start, end);
+    printk("    Mapping 0x%08X -> 0x%08X (identity)\n", start, end);
     
     // Map each page in the range
     for (uint32_t addr = start; addr < end; addr += PAGE_SIZE) {

@@ -66,6 +66,10 @@ void keyboard_init(void) {
         inb(KB_DATA_PORT);
     }
     
+    // Enable IRQ 1 (keyboard interrupt)
+    extern void pic_enable_irq(uint8_t irq);
+    pic_enable_irq(1);
+    
     printk_info("PS/2 Keyboard driver initialized");
 }
 
