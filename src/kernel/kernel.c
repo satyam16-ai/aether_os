@@ -11,6 +11,7 @@
 #include <keyboard.h>
 #include <shell.h>
 #include <paging.h>
+#include <process.h>
 
 static inline void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
@@ -63,6 +64,9 @@ void kmain(void) {
     // Initialize Paging (Virtual Memory) - Phase 4 Step 1
     paging_init();
     
+    // Initialize Process Management - Phase 4 Step 3
+    process_init();
+    
     // Initialize Keyboard Driver
     keyboard_init();
     
@@ -78,9 +82,10 @@ void kmain(void) {
     printk("  [DONE] PIT - Programmable Interval Timer (100 Hz)\n");
     printk("  [DONE] Memory - Kernel Heap Allocator (4MB)\n");
     printk("  [DONE] Paging - Virtual Memory (initialized, not yet enabled)\n");
+    printk("  [DONE] Process - PCB and Process Management\n");
     printk("  [DONE] Keyboard - PS/2 Driver\n");
     printk("  [TODO] Paging Enable - Activate virtual memory\n");
-    printk("  [TODO] Scheduler - Process Management\n");
+    printk("  [TODO] Scheduler - Context Switching & Scheduling\n");
     printk("  [TODO] Syscalls - System Call Interface\n");
     printk("  [TODO] VFS - Virtual File System\n");
     printk("  [TODO] Drivers - Hardware Abstraction\n");
@@ -89,7 +94,8 @@ void kmain(void) {
     
     printk("\n");
     printk_info("Kernel initialization complete. All subsystems ready.");
-    printk_info("Phase 4 Step 2: Virtual Memory Ready (use 'paging enable')");
+    printk_info("Phase 4 Step 3: Process Control Blocks (PCB) ready");
+    printk_info("Type 'help' for available commands");
     
     // Brief delay to ensure hardware is ready
     printk("\nWaiting for hardware to settle...\n");

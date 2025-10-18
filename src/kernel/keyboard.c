@@ -158,8 +158,9 @@ void keyboard_handler(void) {
     if (keyboard_state.input_enabled && ascii != 0) {
         // Echo character to console
         if (ascii == '\b') {
-            // Handle backspace
+            // Handle backspace - echo visual feedback, add to buffer for readline
             console_backspace();
+            keyboard_add_to_buffer('\b');
         } else if (ascii == '\n') {
             // Handle enter
             console_putchar('\n');
@@ -214,9 +215,11 @@ void console_readline(char* buffer, int max_len) {
             return;
         }
         
-        if (c == '\b' && pos > 0) {
-            // Backspace already handled by keyboard handler
-            pos--;
+        if (c == '\b') {
+            // Backspace - only decrement if there's something to delete
+            if (pos > 0) {
+                pos--;
+            }
             continue;
         }
         
