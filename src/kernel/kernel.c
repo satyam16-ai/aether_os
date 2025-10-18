@@ -87,30 +87,13 @@ void kmain(void) {
     
     printk_warn("Sentinel AI integration hooks planned for Phase 6");
     
-    // Memory info placeholder
-    printk("\nMemory Layout (current):\n");
-    printk("  Kernel loaded at: %p\n", kmain);
-    printk("  Stack pointer: %p\n", __builtin_frame_address(0));
+    printk("\n");
+    printk_info("Kernel initialization complete. All subsystems ready.");
+    printk_info("Phase 4 Step 2: Virtual Memory Ready (use 'paging enable')");
     
-    // Simple port write (status LED / POST code) - demonstration only
-    outb(0x80, 0x55);
-    printk_info("POST code 0x55 written to port 0x80");
-    
-    printk("\nTimer Test:\n");
-    printk_info("Hardware interrupts enabled. Timer ticking at 100 Hz.");
-    printk("  Watch for timer messages every second...\n");
-    
-    // Demonstrate timer sleep function
-    printk("Testing sleep function: sleeping for 2 seconds...\n");
-    timer_sleep_ms(2000);
-    printk("Wake up! Sleep test completed.\n\n");
-    
-    printk("Kernel initialization complete. All subsystems ready.\n");
-    printk_info("Phase 3 Complete: Interactive Shell with Memory Management");
-    
-    // Initialize and run the interactive shell
-    printk("\nStarting interactive shell...\n");
-    timer_sleep_ms(1000); // Brief pause for effect
+    // Brief delay to ensure hardware is ready
+    printk("\nWaiting for hardware to settle...\n");
+    timer_sleep_ms(500);
     
     shell_init();
     shell_run(); // This runs forever, handling user input

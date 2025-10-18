@@ -87,11 +87,15 @@ void timer_handler(void) {
     // Send End-of-Interrupt to PIC
     pic_send_eoi(0);
     
-    // Print tick counter every second (adjust based on frequency)
+    // NOTE: Automatic tick printing disabled for cleaner shell
+    // Use 'uptime' command to check system uptime
+    // Uncomment below to re-enable automatic tick messages:
+    /*
     if (system_ticks % timer_frequency_hz == 0) {
         uint32_t seconds = system_ticks / timer_frequency_hz;
         printk("[TICK] Uptime: %u seconds (%u ticks)\n", seconds, system_ticks);
     }
+    */
 }
 
 // Get current tick count

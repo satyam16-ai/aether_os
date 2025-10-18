@@ -4,6 +4,7 @@
 #include <printk.h>
 #include <memory.h>
 #include <timer.h>
+#include <paging.h>
 #include <stdint.h>
 
 #define MAX_COMMAND_LENGTH 256
@@ -48,10 +49,12 @@ void shell_init(void) {
     printk("╔════════════════════════════════════════════════════════════════════════════╗\n");
     printk("║                          Aether OS Interactive Shell                       ║\n");
     printk("║                                                                            ║\n");
-    printk("║  AI-Native Operating System - Phase 3: Keyboard & Memory Management       ║\n");
+    printk("║  AI-Native Operating System - Phase 4: Virtual Memory & Processes         ║\n");
     printk("║  Type 'help' for available commands                                       ║\n");
     printk("╚════════════════════════════════════════════════════════════════════════════╝\n");
     console_set_color(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+    printk("\n");
+    printk_info("Keyboard ready - you should see characters as you type");
     printk("\n");
 }
 
@@ -113,6 +116,8 @@ void shell_process_command(const char* command) {
         cmd_echo(args);
     } else if (strncmp(command, "test", cmd_len) == 0 && cmd_len == 4) {
         cmd_test(args);
+    } else if (strncmp(command, "paging", cmd_len) == 0 && cmd_len == 6) {
+        cmd_paging(args);
     } else if (strncmp(command, "exit", cmd_len) == 0 && cmd_len == 4) {
         printk("Goodbye! System will halt.\n");
         __asm__ volatile("cli; hlt");
@@ -135,6 +140,7 @@ void cmd_help(void) {
     printk("  uptime   - Show system uptime\n");
     printk("  echo     - Echo text to screen\n");
     printk("  test     - Run various tests\n");
+    printk("  paging   - Virtual memory control (enable/status/test)\n");
     printk("  exit     - Halt the system\n");
     printk("\nFunction Keys:\n");
     printk("  F1       - System info\n");
@@ -239,5 +245,107 @@ void cmd_test(const char* args) {
         keyboard_getchar(); // Wait for keypress
     } else {
         printk("Unknown test: %s\n", args);
+    }
+}
+
+void cmd_paging(const char* args) {
+    static int paging_enabled = 0;
+    
+    if (!args) {
+        printk("Paging commands:\n");
+        printk("  paging status  - Show paging status\n");
+        printk("  paging enable  - Enable virtual memory\n");
+        printk("  paging test    - Test page fault handler\n");
+        return;
+    }
+    
+    if (strcmp(args, "status") == 0) {
+        printk("Virtual Memory Status:\n");
+        if (paging_enabled) {
+            printk("  State: ENABLED (virtual addressing active)\n");
+            printk("  Page Directory: %p\n", paging_get_current_directory());
+            printk("  Translation: Virtual -> Physical via MMU\n");
+        } else {
+            printk("  State: DISABLED (physical addressing)\n");
+            printk("  Page Directory: %p (initialized but not loaded)\n", 
+                   paging_get_current_directory());
+            printk("  Translation: Direct (no paging)\n");
+        }
+        
+        // Test address translation
+        uint32_t test_virt = 0x00100000;
+        uint32_t test_phys = paging_get_physical_address(
+            paging_get_current_directory(), test_virt);
+        printk("\n  Example: Virtual 0x%08X -> Physical 0x%08X\n", 
+               test_virt, test_phys);
+        
+    } else if (strcmp(args, "enable") == 0) {
+        if (paging_enabled) {
+            printk("Paging is already enabled!\n");
+            return;
+        }
+        
+        printk("\n");
+        console_set_color(vga_entry_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK));
+        printk("═══════════════════════════════════════════════════════════\n");
+        printk("    ENABLING VIRTUAL MEMORY (PAGING)\n");
+        printk("═══════════════════════════════════════════════════════════\n");
+        console_set_color(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+        
+        printk("\nThis will:\n");
+        printk("  1. Load page directory into CR3\n");
+        printk("  2. Set CR0.PG bit (enable paging)\n");
+        printk("  3. Switch to virtual addressing\n");
+        printk("\n");
+        
+        printk_warn("If you see this message after, paging works!");
+        printk("\nEnabling paging in 3 seconds...\n");
+        timer_sleep_ms(3000);
+        
+        printk("\n[1/2] Loading page directory...\n");
+        timer_sleep_ms(500);
+        
+        printk("[2/2] Setting CR0.PG bit...\n");
+        timer_sleep_ms(500);
+        
+        // THE BIG MOMENT!
+        paging_enable();
+        paging_enabled = 1;
+        
+        printk("\n");
+        console_set_color(vga_entry_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK));
+        printk("✓ SUCCESS! Virtual memory is now active!\n");
+        console_set_color(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+        printk("\nAll memory accesses now go through the MMU.\n");
+        printk("The kernel is running in virtual address space.\n");
+        
+    } else if (strcmp(args, "test") == 0) {
+        if (!paging_enabled) {
+            printk_warn("Paging must be enabled first!");
+            printk("Run 'paging enable' first.\n");
+            return;
+        }
+        
+        printk("Page Fault Test:\n");
+        printk("  Attempting to access unmapped address 0x80000000...\n");
+        printk("\n");
+        printk_warn("This will trigger a page fault!");
+        printk("The kernel will panic and halt.\n");
+        printk("\nPress any key to trigger page fault, or Ctrl+C to cancel...\n");
+        
+        keyboard_getchar(); // Wait for confirmation
+        
+        printk("\nAccessing 0x80000000...\n");
+        
+        // This should cause a page fault!
+        volatile uint32_t* bad_addr = (uint32_t*)0x80000000;
+        uint32_t value = *bad_addr;
+        
+        // If we get here, something is wrong
+        printk("ERROR: No page fault triggered! (read value: 0x%X)\n", value);
+        
+    } else {
+        printk("Unknown paging command: %s\n", args);
+        printk("Use 'paging' for help.\n");
     }
 }

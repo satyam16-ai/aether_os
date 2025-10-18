@@ -205,16 +205,19 @@ void console_readline(char* buffer, int max_len) {
         }
         
         if (c == '\n') {
+            // Newline already echoed by keyboard handler
             buffer[pos] = '\0';
             return;
         }
         
         if (c == '\b' && pos > 0) {
+            // Backspace already handled by keyboard handler
             pos--;
             continue;
         }
         
         if (c >= 32 && c <= 126) {
+            // Character already echoed by keyboard handler
             buffer[pos++] = c;
         }
     }
