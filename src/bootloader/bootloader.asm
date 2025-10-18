@@ -40,7 +40,6 @@ hang:
     cli
     hlt
 
-; Creative Logo
 logo db "    _   _   _   _   _   _   _   _  ",10
      db "   / \\ / \\ / \\ / \\ / \\ / \\ / \\ / \\ ",10
      db "  ( A )e( t )h( e )r( O )S(  ) ",10

@@ -1,4 +1,20 @@
-.pdf
-# Aether OS
-Aether OS_ Building an AI-Infused Custom Operating System.pdf
-bootloader.bin 
+# Existing stray artifacts
+*.pdf
+bootloader.bin
+
+# Build artifacts
+/build/
+*.o
+*.elf
+*.bin
+*.iso
+
+# Toolchain
+cross/
+
+# Misc / OS noise
+*.swp
+*.log
+.DS_Store
+*.tmp
+
