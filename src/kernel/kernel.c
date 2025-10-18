@@ -10,6 +10,7 @@
 #include <memory.h>
 #include <keyboard.h>
 #include <shell.h>
+#include <paging.h>
 
 static inline void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
@@ -59,6 +60,9 @@ void kmain(void) {
     // Initialize Memory Manager
     memory_init();
     
+    // Initialize Paging (Virtual Memory) - Phase 4 Step 1
+    paging_init();
+    
     // Initialize Keyboard Driver
     keyboard_init();
     
@@ -73,8 +77,9 @@ void kmain(void) {
     printk("  [DONE] PIC - Programmable Interrupt Controller\n");
     printk("  [DONE] PIT - Programmable Interval Timer (100 Hz)\n");
     printk("  [DONE] Memory - Kernel Heap Allocator (4MB)\n");
+    printk("  [DONE] Paging - Virtual Memory (initialized, not yet enabled)\n");
     printk("  [DONE] Keyboard - PS/2 Driver\n");
-    printk("  [TODO] Paging - Virtual Memory Management\n");
+    printk("  [TODO] Paging Enable - Activate virtual memory\n");
     printk("  [TODO] Scheduler - Process Management\n");
     printk("  [TODO] Syscalls - System Call Interface\n");
     printk("  [TODO] VFS - Virtual File System\n");
