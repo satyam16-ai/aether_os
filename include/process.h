@@ -7,8 +7,8 @@
 
 // Maximum number of processes
 #define MAX_PROCESSES       256
-#define KERNEL_STACK_SIZE   8192    // 8KB kernel stack per process
-#define USER_STACK_SIZE     8192    // 8KB user stack per process
+#define KERNEL_STACK_SIZE   4096    // 4KB kernel stack per process
+#define USER_STACK_SIZE     4096    // 4KB user stack per process
 
 // Process states
 typedef enum {
@@ -71,6 +71,7 @@ typedef struct process {
     page_directory_t* page_directory;   // Virtual address space
     uint32_t kernel_stack;          // Kernel stack pointer
     uint32_t user_stack;            // User stack pointer
+    uint8_t is_kernel;              // 1 = kernel mode, 0 = user mode
     
     // Parent/child relationships
     struct process* parent;         // Parent process

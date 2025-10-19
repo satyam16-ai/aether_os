@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <printk.h>
 #include <gdt.h>
+#include <tss.h>
 #include <idt.h>
 #include <pic.h>
 #include <timer.h>
@@ -12,6 +13,7 @@
 #include <shell.h>
 #include <paging.h>
 #include <process.h>
+#include <scheduler.h>
 
 static inline void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
@@ -49,6 +51,10 @@ void kmain(void) {
     // Initialize GDT (Global Descriptor Table)
     gdt_init();
     
+    // Initialize TSS (Task State Segment) - needed for context switching
+    extern uint32_t read_esp();
+    tss_init(read_esp());
+    
     // Initialize IDT (Interrupt Descriptor Table) 
     idt_init();
     
@@ -67,6 +73,17 @@ void kmain(void) {
     // Initialize Process Management - Phase 4 Step 3
     process_init();
     
+    // Initialize Scheduler - Phase 4 Step 4
+    scheduler_init();
+    
+    // Initialize User Mode - Phase 5 Step 1
+    extern void usermode_init(void);
+    usermode_init();
+    
+    // Initialize System Calls - Phase 5 Step 2
+    extern void syscall_init(void);
+    syscall_init();
+    
     // Initialize Keyboard Driver
     keyboard_init();
     
@@ -76,17 +93,21 @@ void kmain(void) {
     
     // Subsystem initialization status
     printk("\nSubsystem Status:\n");
-    printk("  [DONE] GDT - Global Descriptor Table\n");
+    printk("  [DONE] GDT - Global Descriptor Table (with TSS)\n");
+    printk("  [DONE] TSS - Task State Segment\n");
     printk("  [DONE] IDT - Interrupt Descriptor Table (exceptions + IRQs)\n");
     printk("  [DONE] PIC - Programmable Interrupt Controller\n");
     printk("  [DONE] PIT - Programmable Interval Timer (100 Hz)\n");
     printk("  [DONE] Memory - Kernel Heap Allocator (4MB)\n");
     printk("  [DONE] Paging - Virtual Memory (initialized, not yet enabled)\n");
     printk("  [DONE] Process - PCB and Process Management\n");
+    printk("  [DONE] Scheduler - Round-Robin Scheduling (ready)\n");
+    printk("  [DONE] User Mode - Ring 3 execution support\n");
+    printk("  [DONE] System Calls - INT 0x80 interface\n");
     printk("  [DONE] Keyboard - PS/2 Driver\n");
     printk("  [TODO] Paging Enable - Activate virtual memory\n");
-    printk("  [TODO] Scheduler - Context Switching & Scheduling\n");
-    printk("  [TODO] Syscalls - System Call Interface\n");
+    printk("  [DONE] Context Switch - Process multitasking (with TSS!)\n");
+    printk("  [TODO] fork/exec/wait - Process lifecycle (Phase 5 Step 3)\n");
     printk("  [TODO] VFS - Virtual File System\n");
     printk("  [TODO] Drivers - Hardware Abstraction\n");
     
@@ -94,7 +115,7 @@ void kmain(void) {
     
     printk("\n");
     printk_info("Kernel initialization complete. All subsystems ready.");
-    printk_info("Phase 4 Step 3: Process Control Blocks (PCB) ready");
+    printk_info("Phase 4 Step 4: Context Switching & Scheduler ready");
     printk_info("Type 'help' for available commands");
     
     // Brief delay to ensure hardware is ready

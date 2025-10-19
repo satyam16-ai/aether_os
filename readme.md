@@ -61,27 +61,56 @@ Sentinel AI is Aether’s integrated intelligence layer:
 
 ## 🚀 Project Roadmap
 
-### 🧱 Phase 1: Core Bootloader & Kernel
-- [x] Custom bootloader (x86_64)
+### 🧱 Phase 1: Core Bootloader & Kernel ✓
+- [x] Custom bootloader (x86 GRUB Multiboot)
 - [x] Kernel entry point in C
-- [ ] Paging, interrupts, syscall interface
+- [x] VGA text mode console
+- [x] Interrupt handling (IDT)
+- [x] Timer (PIT - 100 Hz)
+- [x] Keyboard driver (PS/2)
+- [x] Basic shell
 
-### 🖥️ Phase 2: CLI & Minimal UI
-- [ ] Shell environment
-- [ ] Minimal GUI with modular panels
-- [ ] First package manager version
+### 🖥️ Phase 2: Memory Management ✓
+- [x] Kernel heap allocator (4MB)
+- [x] kmalloc/kfree implementation
+- [x] Shell enhancements (colored output, commands)
+- [x] Panic handler with register dump
 
-### 🧠 Phase 3: Sentinel AI (MVP)
+### 🧠 Phase 3: System Information ✓
+- [x] CPU detection
+- [x] Memory info display
+- [x] System stats (uptime, ticks)
+- [x] Color-coded logging
+
+### 🌐 Phase 4: Virtual Memory & Process Management ✓
+- [x] Paging system (4KB pages, identity mapping)
+- [x] Process Control Blocks (256 processes, 4KB stacks)
+- [x] Context switching (assembly)
+- [x] Task State Segment (TSS) for safe context switching
+- [x] Round-robin scheduler (10 tick quantum)
+- [x] Preemptive multitasking
+- [x] Shell commands: paging, ps, sched
+- [x] **Successfully runs 5+ processes simultaneously!**
+
+### 📦 Phase 5: User Mode & System Calls (NEXT)
+- [ ] Ring 3 execution for processes
+- [ ] System call interface (INT 0x80)
+- [ ] fork(), exec(), wait(), exit()
+- [ ] Separate address spaces per process
+- [ ] Inter-process communication
+
+### � Phase 6: Sentinel AI (MVP)
 - [ ] Local ML model runtime (ONNX/TFLite)
 - [ ] Natural language CLI/GUI agent
 - [ ] Smart system suggestions
+- [ ] Package manager with AI
 
-### 🌐 Phase 4: Cloud AI & Intelligence
+### 🌐 Phase 7: Cloud AI & Intelligence
 - [ ] Hybrid AI (local/cloud) with fallback
 - [ ] Cloud orchestration (for large model tasks)
 - [ ] Federated learning implementation
 
-### 📦 Phase 5: Embedded Target Support
+### 📦 Phase 8: Embedded Target Support
 - [ ] ARM/RISC-V port
 - [ ] TinyML integration (TFLite Micro)
 - [ ] Resource-aware UI + AI services
@@ -92,8 +121,67 @@ Sentinel AI is Aether’s integrated intelligence layer:
 
 - [📖 Full Documentation](./docs/)
 - [🧠 Research Report](./RESEARCH.md)
+- [🧪 Testing Guide](./TESTING.md) - Comprehensive test procedures for Phase 4
+- [✅ Phase 4 Complete](./PHASE4_COMPLETE.md) - Technical details of multitasking implementation
 - [📜 License](./LICENSE)
 - [📢 Follow Development](https://github.com/yourusername/aether-os)
+
+---
+
+## 🎮 Quick Start
+
+### Building AetherOS
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/aether-os.git
+cd aether-os
+
+# Build the kernel
+make
+
+# Run in QEMU
+make run
+# or manually:
+qemu-system-i386 -cdrom build/aether.iso -m 32M
+```
+
+### Available Shell Commands
+
+**Paging (Virtual Memory):**
+```
+paging status    - Show page directory info
+paging test      - Display page table entries
+paging enable    - Activate virtual memory
+```
+
+**Process Management:**
+```
+ps              - List all processes
+ps list         - List all processes
+ps current      - Show current process
+ps info <pid>   - Show process details
+ps create       - Create test processes
+```
+
+**Scheduler:**
+```
+sched           - Show scheduler stats
+sched stats     - Show scheduler stats
+sched start     - Enable multitasking
+sched stop      - Disable multitasking
+sched yield     - Yield to next process
+```
+
+**System:**
+```
+help            - Show available commands
+clear           - Clear screen
+cpu             - Show CPU information
+mem             - Show memory usage
+uptime          - Show system uptime
+echo <text>     - Print text
+```
 
 ---
 

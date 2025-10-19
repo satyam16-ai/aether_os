@@ -30,11 +30,13 @@ void paging_init(void) {
     
     printk("  Kernel page directory allocated at: %p\n", kernel_directory);
     
-    // Identity map the first 4MB (0x00000000 - 0x00400000)
-    // This covers the kernel code and data
-    printk("  Identity mapping first 4MB (kernel space)...\n");
-    paging_identity_map(kernel_directory, 0x00000000, 0x00400000, 
-                       PAGE_PRESENT | PAGE_WRITE);
+    // Identity map the first 16MB (0x00000000 - 0x01000000)
+    // This covers:
+    //   - Kernel code and data (0x00000000 - 0x00400000)
+    //   - User space for processes (0x00400000 - 0x01000000)
+    printk("  Identity mapping first 16MB (kernel + user space)...\n");
+    paging_identity_map(kernel_directory, 0x00000000, 0x01000000, 
+                       PAGE_PRESENT | PAGE_WRITE | PAGE_USER);
     
     // Identity map VGA text buffer (0xB8000 - 0xB9000)
     printk("  Mapping VGA text buffer (0xB8000)...\n");

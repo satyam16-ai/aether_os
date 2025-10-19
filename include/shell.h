@@ -15,5 +15,7 @@ void cmd_uptime(void);
 void cmd_echo(const char* args);
 void cmd_test(const char* args);
 void cmd_paging(const char* args);
+void cmd_ps(const char* args);
+void cmd_sched(const char* args);
 
 #endif // SHELL_H

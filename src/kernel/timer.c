@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <printk.h>
+#include <scheduler.h>
 
 // PIT I/O ports
 #define PIT_CHANNEL0    0x40    // Channel 0 data port (IRQ 0)
@@ -83,6 +84,9 @@ void timer_init(uint32_t frequency_hz) {
 // Timer interrupt handler (called from IRQ 0 handler)
 void timer_handler(void) {
     system_ticks++;
+    
+    // Call scheduler tick for process scheduling
+    scheduler_tick();
     
     // Send End-of-Interrupt to PIC
     pic_send_eoi(0);

@@ -5,10 +5,16 @@
 #include <memory.h>
 #include <timer.h>
 #include <paging.h>
+#include <process.h>
+#include <scheduler.h>
+#include <usermode.h>
 #include <stdint.h>
 
 #define MAX_COMMAND_LENGTH 256
 #define MAX_ARGS 16
+
+// Forward declarations
+void cmd_usermode(const char* args);
 
 // String utility functions
 static int strcmp(const char* str1, const char* str2) {
@@ -46,12 +52,7 @@ static int strlen(const char* str) {
 void shell_init(void) {
     printk("\n");
     console_set_color(vga_entry_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK));
-    printk("╔════════════════════════════════════════════════════════════════════════════╗\n");
-    printk("║                          Aether OS Interactive Shell                       ║\n");
-    printk("║                                                                            ║\n");
-    printk("║  AI-Native Operating System - Phase 4: Virtual Memory & Processes         ║\n");
-    printk("║  Type 'help' for available commands                                       ║\n");
-    printk("╚════════════════════════════════════════════════════════════════════════════╝\n");
+
     console_set_color(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
     printk("\n");
     printk_info("Keyboard ready - you should see characters as you type");
@@ -118,6 +119,12 @@ void shell_process_command(const char* command) {
         cmd_test(args);
     } else if (strncmp(command, "paging", cmd_len) == 0 && cmd_len == 6) {
         cmd_paging(args);
+    } else if (strncmp(command, "ps", cmd_len) == 0 && cmd_len == 2) {
+        cmd_ps(args);
+    } else if (strncmp(command, "sched", cmd_len) == 0 && cmd_len == 5) {
+        cmd_sched(args);
+    } else if (strncmp(command, "usermode", cmd_len) == 0 && cmd_len == 8) {
+        cmd_usermode(args);
     } else if (strncmp(command, "exit", cmd_len) == 0 && cmd_len == 4) {
         printk("Goodbye! System will halt.\n");
         __asm__ volatile("cli; hlt");
@@ -141,6 +148,9 @@ void cmd_help(void) {
     printk("  echo     - Echo text to screen\n");
     printk("  test     - Run various tests\n");
     printk("  paging   - Virtual memory control (enable/status/test)\n");
+    printk("  ps       - Process management (list/info/current)\n");
+    printk("  sched    - Scheduler control (start/stop/stats)\n");
+    printk("  usermode - User mode (ring 3) control\n");
     printk("  exit     - Halt the system\n");
     printk("\nFunction Keys:\n");
     printk("  F1       - System info\n");
@@ -347,5 +357,220 @@ void cmd_paging(const char* args) {
     } else {
         printk("Unknown paging command: %s\n", args);
         printk("Use 'paging' for help.\n");
+    }
+}
+
+// Test process functions
+static void test_process_1(void) {
+    printk("[Process 1] Started! (PID %d)\n", process_get_current()->pid);
+    
+    // Simple finite loop for testing
+    for (int i = 0; i < 5; i++) {
+        printk("[Process 1] Iteration %d\n", i);
+        
+        // Busy wait to simulate work
+        for (volatile int j = 0; j < 1000000; j++);
+    }
+    
+    printk("[Process 1] Finished!\n");
+    process_exit(0);
+}
+
+static void test_process_2(void) {
+    printk("[Process 2] Started! (PID %d)\n", process_get_current()->pid);
+    
+    // Simple finite loop for testing
+    for (int i = 0; i < 5; i++) {
+        printk("[Process 2] Iteration %d\n", i);
+        
+        // Busy wait to simulate work
+        for (volatile int j = 0; j < 1000000; j++);
+    }
+    
+    printk("[Process 2] Finished!\n");
+    process_exit(0);
+}
+
+void cmd_ps(const char* args) {
+    if (!args) {
+        // No arguments - show list
+        process_list_all();
+        return;
+    }
+    
+    // Skip whitespace
+    while (*args == ' ') args++;
+    
+    if (strcmp(args, "list") == 0 || strcmp(args, "l") == 0) {
+        process_list_all();
+    } else if (strcmp(args, "current") == 0 || strcmp(args, "cur") == 0) {
+        process_t* current = process_get_current();
+        if (current) {
+            process_print_info(current);
+        } else {
+            printk("No current process!\n");
+        }
+    } else if (strncmp(args, "info ", 5) == 0) {
+        args += 5;
+        while (*args == ' ') args++;
+        
+        // Parse PID
+        uint32_t pid = 0;
+        while (*args >= '0' && *args <= '9') {
+            pid = pid * 10 + (*args - '0');
+            args++;
+        }
+        
+        process_t* proc = process_get_by_pid(pid);
+        if (proc) {
+            process_print_info(proc);
+        } else {
+            printk("Process %d not found\n", pid);
+        }
+    } else if (strcmp(args, "create") == 0 || strcmp(args, "test") == 0) {
+        printk("Creating test processes...\n");
+        
+        process_t* p1 = process_create("test_proc_1", test_process_1, PROCESS_PRIORITY_NORMAL);
+        if (p1) {
+            printk("  Created: %s (PID %d)\n", p1->name, p1->pid);
+            scheduler_add_process(p1);
+        }
+        
+        process_t* p2 = process_create("test_proc_2", test_process_2, PROCESS_PRIORITY_NORMAL);
+        if (p2) {
+            printk("  Created: %s (PID %d)\n", p2->name, p2->pid);
+            scheduler_add_process(p2);
+        }
+        
+        printk("Test processes created and added to ready queue.\n");
+        printk("Use 'sched start' to enable scheduling.\n");
+    } else {
+        printk("Process management commands:\n");
+        printk("  ps              - List all processes\n");
+        printk("  ps list         - List all processes\n");
+        printk("  ps current      - Show current process info\n");
+        printk("  ps info <pid>   - Show info for specific process\n");
+        printk("  ps create       - Create test processes\n");
+    }
+}
+
+void cmd_sched(const char* args) {
+    if (!args) {
+        // No arguments - show stats
+        scheduler_print_stats();
+        return;
+    }
+    
+    // Skip whitespace
+    while (*args == ' ') args++;
+    
+    if (strcmp(args, "stats") == 0 || strcmp(args, "status") == 0) {
+        scheduler_print_stats();
+    } else if (strcmp(args, "start") == 0 || strcmp(args, "enable") == 0) {
+        if (scheduler_is_enabled()) {
+            printk_warn("Scheduler already enabled");
+        } else {
+            scheduler_enable();
+            printk("Scheduler enabled! Multitasking active.\n");
+            printk("Processes will switch every 10 ticks (100ms).\n");
+        }
+    } else if (strcmp(args, "stop") == 0 || strcmp(args, "disable") == 0) {
+        if (!scheduler_is_enabled()) {
+            printk_warn("Scheduler already disabled");
+        } else {
+            scheduler_disable();
+            printk("Scheduler disabled.\n");
+        }
+    } else if (strcmp(args, "yield") == 0) {
+        if (!scheduler_is_enabled()) {
+            printk_warn("Scheduler not enabled. Use 'sched start' first.");
+        } else {
+            printk("Yielding to next process...\n");
+            scheduler_yield();
+            printk("Back from yield.\n");
+        }
+    } else if (strcmp(args, "test") == 0) {
+        // Simple test: just show we can track multiple processes
+        printk("Process tracking test:\n");
+        printk("  - Processes are created successfully\n");
+        printk("  - Scheduler tracks their state\n");
+        printk("  - Statistics are updated\n");
+        printk("\nContext switching will be implemented in Phase 5.\n");
+    } else {
+        printk("Scheduler commands:\n");
+        printk("  sched           - Show scheduler statistics\n");
+        printk("  sched stats     - Show scheduler statistics\n");
+        printk("  sched start     - Enable scheduler & context switching\n");
+        printk("  sched stop      - Disable scheduler\n");
+        printk("  sched yield     - Yield to next ready process\n");
+        printk("  sched test      - Show process tracking capabilities\n");
+    }
+}
+
+void cmd_usermode(const char* args) {
+    if (!args || *args == '\0') {
+        // No arguments - show status
+        uint32_t cpl = get_current_privilege_level();
+        printk("\n=== User Mode Status ===\n");
+        printk("Current Privilege Level: %d (Ring %d)\n", cpl, cpl);
+        printk("Mode: %s\n", cpl == 0 ? "Kernel Mode" : "User Mode");
+        printk("\nGDT Segments:\n");
+        printk("  0x08 - Kernel Code (Ring 0)\n");
+        printk("  0x10 - Kernel Data (Ring 0)\n");
+        printk("  0x1B - User Code (Ring 3)\n");
+        printk("  0x23 - User Data (Ring 3)\n");
+        printk("  0x28 - TSS\n");
+        return;
+    }
+    
+    // Skip whitespace
+    while (*args == ' ') args++;
+    
+    if (strcmp(args, "status") == 0) {
+        uint32_t cpl = get_current_privilege_level();
+        printk("Current Privilege Level: %d (Ring %d)\n", cpl, cpl);
+    } else if (strcmp(args, "test") == 0 || strcmp(args, "create") == 0) {
+        printk("\n");
+        console_set_color(vga_entry_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK));
+        printk("═══════════════════════════════════════════════════════════\n");
+        printk("    CREATING USER MODE PROCESSES (Ring 3)\n");
+        printk("═══════════════════════════════════════════════════════════\n");
+        console_set_color(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+        
+        printk("\nThis will create processes that run in user mode (ring 3)\n");
+        printk("User mode processes cannot execute privileged instructions.\n\n");
+        
+        // Create user mode test processes
+        process_t* p1 = process_create("user_test_1", NULL, PROCESS_PRIORITY_NORMAL);
+        if (p1) {
+            process_setup_user_mode(p1, user_mode_test_1);
+            scheduler_add_process(p1);
+            printk("  ✓ Created: %s (PID %d) - User Mode\n", p1->name, p1->pid);
+        }
+        
+        process_t* p2 = process_create("user_test_2", NULL, PROCESS_PRIORITY_NORMAL);
+        if (p2) {
+            process_setup_user_mode(p2, user_mode_test_2);
+            scheduler_add_process(p2);
+            printk("  ✓ Created: %s (PID %d) - User Mode\n", p2->name, p2->pid);
+        }
+        
+        printk("\nUser mode processes created!\n");
+        printk("Use 'ps list' to see them.\n");
+        printk("Use 'sched start' to run them.\n");
+        
+        printk("\n");
+        console_set_color(vga_entry_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK));
+        printk("═══════════════════════════════════════════════════════════\n");
+        printk("    Phase 5 Step 1: User Mode ACTIVE!\n");
+        printk("═══════════════════════════════════════════════════════════\n");
+        console_set_color(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+        printk("\n");
+    } else {
+        printk("User mode commands:\n");
+        printk("  usermode        - Show user mode status\n");
+        printk("  usermode status - Show current privilege level\n");
+        printk("  usermode test   - Create user mode test processes\n");
+        printk("  usermode create - Create user mode test processes\n");
     }
 }

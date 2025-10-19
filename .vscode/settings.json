@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.dbclient-js": "javascript",
+        "printk.h": "c",
+        "memory.h": "c"
+    }
+}

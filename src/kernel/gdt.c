@@ -20,8 +20,8 @@ struct gdt_ptr {
     uint32_t base;         // Address of GDT
 } __attribute__((packed));
 
-// GDT with 5 entries: null, kernel code, kernel data, user code, user data
-#define GDT_ENTRIES 5
+// GDT with 6 entries: null, kernel code, kernel data, user code, user data, TSS
+#define GDT_ENTRIES 6
 static struct gdt_entry gdt[GDT_ENTRIES];
 static struct gdt_ptr gdt_pointer;
 
@@ -49,8 +49,8 @@ static struct gdt_ptr gdt_pointer;
 // External assembly function to load GDT and flush segment registers
 extern void gdt_flush(uint32_t gdt_ptr_addr);
 
-// Helper function to set a GDT entry
-static void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran) {
+// Helper function to set a GDT entry (now public for TSS)
+void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran) {
     gdt[num].base_low    = (base & 0xFFFF);
     gdt[num].base_middle = (base >> 16) & 0xFF;
     gdt[num].base_high   = (base >> 24) & 0xFF;

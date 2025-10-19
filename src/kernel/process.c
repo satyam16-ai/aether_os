@@ -9,6 +9,10 @@ process_t process_table[MAX_PROCESSES];
 process_t* current_process = NULL;
 uint32_t next_pid = 0;
 
+// Static stack allocation (avoids heap fragmentation)
+static uint8_t process_stacks[MAX_PROCESSES][KERNEL_STACK_SIZE] __attribute__((aligned(16)));
+static int stack_allocated[MAX_PROCESSES] = {0};
+
 // String utilities (simple implementations)
 static size_t strlen(const char* str) {
     size_t len = 0;
@@ -126,25 +130,22 @@ process_t* process_create(const char* name, void (*entry_point)(void),
     process->priority = priority;
     process->quantum = 10;  // Default time slice
     
-    // Allocate kernel stack
-    process->kernel_stack = (uint32_t)kmalloc(KERNEL_STACK_SIZE);
-    if (!process->kernel_stack) {
-        printk_error("Failed to allocate kernel stack for process %d", pid);
+    // Use pre-allocated static stack (no kmalloc needed!)
+    if (pid < MAX_PROCESSES && !stack_allocated[pid]) {
+        process->kernel_stack = (uint32_t)&process_stacks[pid][0];
+        stack_allocated[pid] = 1;
+        printk("  Using static stack at 0x%08X\n", process->kernel_stack);
+    } else {
+        printk_error("Failed to allocate stack for process %d", pid);
         process_free_pid(pid);
         return NULL;
     }
     
-    // Allocate user stack (for now, same as kernel)
-    process->user_stack = (uint32_t)kmalloc(USER_STACK_SIZE);
-    if (!process->user_stack) {
-        printk_error("Failed to allocate user stack for process %d", pid);
-        kfree((void*)process->kernel_stack);
-        process_free_pid(pid);
-        return NULL;
-    }
+    // For simplicity, user stack = kernel stack (we're in kernel mode only)
+    process->user_stack = process->kernel_stack;
     
     // Set up initial stack (stack grows downward)
-    process->registers.esp = process->kernel_stack + KERNEL_STACK_SIZE - 4;
+    process->registers.esp = process->kernel_stack + KERNEL_STACK_SIZE - 16;
     process->registers.ebp = process->registers.esp;
     
     // Set entry point
@@ -211,12 +212,9 @@ void process_destroy(process_t* process) {
         }
     }
     
-    // Free stacks
-    if (process->kernel_stack) {
-        kfree((void*)process->kernel_stack);
-    }
-    if (process->user_stack) {
-        kfree((void*)process->user_stack);
+    // Mark stack as free
+    if (process->pid < MAX_PROCESSES) {
+        stack_allocated[process->pid] = 0;
     }
     
     // Mark as terminated

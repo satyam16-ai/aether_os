@@ -86,8 +86,8 @@ extern void irq15(void);  // Secondary ATA
 // External function to load IDT
 extern void idt_flush(uint32_t idt_ptr_addr);
 
-// Helper function to set an IDT entry
-static void idt_set_gate(uint8_t num, uint32_t handler, uint16_t selector, uint8_t flags) {
+// Helper function to set an IDT entry (public so syscalls can use it)
+void idt_set_gate(uint8_t num, uint32_t handler, uint16_t selector, uint8_t flags) {
     idt[num].offset_low  = handler & 0xFFFF;
     idt[num].offset_high = (handler >> 16) & 0xFFFF;
     idt[num].selector    = selector;
